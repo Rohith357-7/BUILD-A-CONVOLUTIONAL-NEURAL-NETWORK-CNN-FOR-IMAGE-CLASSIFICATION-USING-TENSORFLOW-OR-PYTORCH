@@ -1,0 +1,89 @@
+import tensorflow as tf
+from tensorflow.keras import layers, models
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Load the CIFAR-10 dataset
+(x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data()
+
+# Normalize pixel values to be between 0 and 1
+x_train, x_test = x_train / 255.0, x_test / 255.0
+
+# Check dataset shape
+print(f"Training Data Shape: {x_train.shape}")
+print(f"Test Data Shape: {x_test.shape}")
+
+# Define CNN architecture
+def build_cnn_model():
+    model = models.Sequential()
+    
+    # First Convolutional Layer
+    model.add(layers.Conv2D(32, (3, 3), activation='relu', input_shape=(32, 32, 3)))
+    model.add(layers.MaxPooling2D((2, 2)))
+
+    # Second Convolutional Layer
+    model.add(layers.Conv2D(64, (3, 3), activation='relu'))
+    model.add(layers.MaxPooling2D((2, 2)))
+
+    # Third Convolutional Layer
+    model.add(layers.Conv2D(64, (3, 3), activation='relu'))
+
+    # Flatten the 3D outputs to 1D for the fully connected layer
+    model.add(layers.Flatten())
+    
+    # Fully connected (Dense) Layer
+    model.add(layers.Dense(64, activation='relu'))
+
+    # Output Layer (10 classes)
+    model.add(layers.Dense(10))
+
+    return model
+
+# Build, compile, and summarize the model
+model = build_cnn_model()
+
+# Compile the model
+model.compile(optimizer='adam', 
+              loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+              metrics=['accuracy'])
+
+# Print model summary
+model.summary()
+
+# Train the model
+history = model.fit(x_train, y_train, epochs=10, 
+                    validation_data=(x_test, y_test))
+
+# Evaluate the model on the test dataset
+test_loss, test_acc = model.evaluate(x_test, y_test, verbose=2)
+print(f"Test accuracy: {test_acc}")
+
+# Plot training & validation accuracy
+plt.plot(history.history['accuracy'], label='Train Accuracy')
+plt.plot(history.history['val_accuracy'], label='Test Accuracy')
+plt.title('Accuracy over epochs')
+plt.xlabel('Epochs')
+plt.ylabel('Accuracy')
+plt.legend(loc='lower right')
+plt.show()
+
+# Plot training & validation loss
+plt.plot(history.history['loss'], label='Train Loss')
+plt.plot(history.history['val_loss'], label='Test Loss')
+plt.title('Loss over epochs')
+plt.xlabel('Epochs')
+plt.ylabel('Loss')
+plt.legend(loc='upper right')
+plt.show()
+
+# Make predictions on the test set
+predictions = model.predict(x_test)
+
+# Show a sample prediction (First image in the test set)
+sample_idx = 0
+print(f"Predicted class label for the first test image: {np.argmax(predictions[sample_idx])}")
+
+# Display the sample image
+plt.imshow(x_test[sample_idx])
+plt.title(f"Predicted: {np.argmax(predictions[sample_idx])}, Actual: {y_test[sample_idx][0]}")
+plt.show()
